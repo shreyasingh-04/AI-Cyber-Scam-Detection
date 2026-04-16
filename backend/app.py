@@ -1,18 +1,24 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-import pickle
 import os
+import pickle
 
 app = Flask(__name__)
 CORS(app)
 
-# Get current directory
+# Base directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Load model
-model_path = os.path.join(BASE_DIR, "../model/scam_model.pkl")
-vectorizer_path = os.path.join(BASE_DIR, "../model/vectorizer.pkl")
+# Model paths
+model_path = os.path.join(BASE_DIR, "scam_model.pkl")
+vectorizer_path = os.path.join(BASE_DIR, "vectorizer.pkl")
 
+# Train model if not exists
+if not os.path.exists(model_path) or not os.path.exists(vectorizer_path):
+    print("Model not found. Training model...")
+    import train_model
+
+# Load model
 model = pickle.load(open(model_path, "rb"))
 vectorizer = pickle.load(open(vectorizer_path, "rb"))
 
@@ -23,7 +29,7 @@ def home():
     return render_template("index.html")
 
 
-# POST API Route
+# Predict Route
 @app.route('/predict', methods=['POST'])
 def predict():
 
@@ -32,12 +38,15 @@ def predict():
 
     vector = vectorizer.transform([message])
 
+    prediction = model.predict(vector)[0]
     probability = model.predict_proba(vector)
-    scam_probability = probability[0][1] * 100
 
-    if scam_probability > 70:
+    confidence = max(probability[0]) * 100
+
+    # Label formatting
+    if prediction == 1 or prediction == "scam":
         result = "Scam"
-    elif scam_probability > 40:
+    elif confidence > 40:
         result = "Suspicious"
     else:
         result = "Safe"
@@ -45,34 +54,37 @@ def predict():
     return jsonify({
         "message": message,
         "prediction": result,
-        "confidence": f"{scam_probability:.2f}%"
+        "confidence": f"{confidence:.2f}%"
     })
 
 
-# Browser Testing Route (Optional but useful)
+# Browser Testing Route
 @app.route('/predict/<path:message>')
 def predict_browser(message):
 
     message = message.lower()
+
     vector = vectorizer.transform([message])
 
+    prediction = model.predict(vector)[0]
     probability = model.predict_proba(vector)
-    scam_probability = probability[0][1] * 100
 
-    if scam_probability > 70:
+    confidence = max(probability[0]) * 100
+
+    if prediction == 1 or prediction == "scam":
         result = "Scam"
-    elif scam_probability > 40:
+    elif confidence > 40:
         result = "Suspicious"
     else:
         result = "Safe"
 
-    return jsonify({
+    return {
         "message": message,
         "prediction": result,
-        "confidence": f"{scam_probability:.2f}%"
-    })
+        "confidence": f"{confidence:.2f}%"
+    }
 
 
-# Run App
+# Run App (Local only)
 if __name__ == "__main__":
     app.run(debug=True)
