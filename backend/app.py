@@ -2,12 +2,16 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import os
 import pickle
+import sys
 
 app = Flask(__name__)
 CORS(app)
 
 # Base directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Add backend folder to path
+sys.path.append(BASE_DIR)
 
 # Model paths
 model_path = os.path.join(BASE_DIR, "scam_model.pkl")
@@ -16,20 +20,18 @@ vectorizer_path = os.path.join(BASE_DIR, "vectorizer.pkl")
 # Train model if not exists
 if not os.path.exists(model_path) or not os.path.exists(vectorizer_path):
     print("Model not found. Training model...")
-    import train_model
+    from backend import train_model
 
 # Load model
 model = pickle.load(open(model_path, "rb"))
 vectorizer = pickle.load(open(vectorizer_path, "rb"))
 
 
-# Home Route
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return "AI Cyber Scam Detection API Running"
 
 
-# Predict Route
 @app.route('/predict', methods=['POST'])
 def predict():
 
@@ -43,8 +45,7 @@ def predict():
 
     confidence = max(probability[0]) * 100
 
-    # Label formatting
-    if prediction == 1 or prediction == "scam":
+    if prediction == 1:
         result = "Scam"
     elif confidence > 40:
         result = "Suspicious"
@@ -58,7 +59,6 @@ def predict():
     })
 
 
-# Browser Testing Route
 @app.route('/predict/<path:message>')
 def predict_browser(message):
 
@@ -71,7 +71,7 @@ def predict_browser(message):
 
     confidence = max(probability[0]) * 100
 
-    if prediction == 1 or prediction == "scam":
+    if prediction == 1:
         result = "Scam"
     elif confidence > 40:
         result = "Suspicious"
@@ -85,6 +85,5 @@ def predict_browser(message):
     }
 
 
-# Run App (Local only)
 if __name__ == "__main__":
     app.run(debug=True)
