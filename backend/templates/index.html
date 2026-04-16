@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Cyber Scam Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>AI Cyber Scam Detection</h1>
+
+    <p>
+        Detect scam messages, phishing emails, and suspicious texts using AI
+    </p>
+
+    <textarea 
+        id="message" 
+        placeholder="Enter message or email to detect scam..."
+    ></textarea>
+
+    <button onclick="detectScam()">Detect Scam</button>
+
+    <div id="loading" style="display:none;">
+        Detecting...
+    </div>
+
+    <div class="result" id="result"></div>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
